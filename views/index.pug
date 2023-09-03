@@ -47,24 +47,42 @@ block nav
           else
             each bucketIter in bucketsArray ? bucketsArray: ['No Buckets!']
               li
-                a(href='/?showBucket='+ bucketIter)
+                a(href='/'+ bucketIter)
                   span(class='fa fa-bitbucket' data-toggle='tooltip' title=bucketIter)
                   span(class='list-group-item-value') #[  #{bucketIter}]
 
 block content
   .container-fluid.container-cards-pf
     br
-    p Welcome to #{title} - you are viewing S3 bucket #[strong #{showBucket}]
+    p Welcome to #{title} - you are viewing S3 bucket 
+      - const parts = folder.split('/') || []
+        if folder
+          a(href=`/${showBucket}`) #{showBucket}
+        else 
+          strong #{showBucket}
+        - let subfld = 0
+          while subfld < parts.length -1
+            span &nbsp;/&nbsp;
+            a(href=`/${showBucket}?folder=${parts.slice(0, subfld + 1).join('/')}`) #{parts.slice(0, subfld + 1).pop()}
+            - subfld++
+        if parts[0] && parts[0].length
+          span &nbsp;/ #{parts.concat().pop()}
 
-    - var imagesArray = JSON.parse(images);
-    if imagesArray.length < 1
+    - const foldersArray = JSON.parse(folders);
+    each fld in foldersArray ? foldersArray: []
+      .row
+        .col-xs-12.col-sm-4.col-md-3.col-lg-2
+          a(href=`/${showBucket}?folder=${folder ? folder + '/' :''}${fld}`) #{fld}
+
+    - const imagesArray = JSON.parse(images);
+    if imagesArray.length + foldersArray.length === 0
       .blank-slate-pf
         .blank-slate-pf-icon
           .fa.fa-ban
           p #[strong No Images Found]
     else
       .row.row-cards-pf
-      each imageUrl in imagesArray ? imagesArray: ['DANGER-WILL-ROBINSON']
+      each imageUrl in imagesArray ? imagesArray: []
         //.col-xs-12.col-sm-6.col-md-4.col-lg-3
         .col-xs-12.col-sm-4.col-md-3.col-lg-2
           .card-pf.card-pf-view
