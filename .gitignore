@@ -31,3 +31,5 @@ public/bower_components
 npm-debug.log
 
 .env
+
+public/thumbnails
