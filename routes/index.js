@@ -24,31 +24,43 @@ function filterImages(data) {
 //----------------------------------------------------------------------------
 // loop through S3 formatted API results and build an images list
 //----------------------------------------------------------------------------
-function buildFileListFromS3Data(bucketname, folder, files) {
+function buildFileListFromS3Data(bucketname, folder, raw) {
     const S3_PREFIX = `https://${bucketname}.s3.${awsregion}.amazonaws.com/`;
-    const results = [];
-    for (const key of files) {
+    console.log({folder, raw})
+    const files = [];
+    for (const key of raw.files) {
         let prefixWithinFolder = key
         if(folder) {
            prefixWithinFolder = key.substring(folder.length + 1);
         }
         console.log({key, prefixWithinFolder})
-        if(prefixWithinFolder.indexOf("/") === -1) {
-          results.push(`${S3_PREFIX}${key}`);
+        if(prefixWithinFolder) {
+          files.push(`${S3_PREFIX}${key}`);
         }
     }
-    return results;
+    const folders = [];
+    for (const prefix of raw.folders) {
+      let fld = prefix.substring(folder.length);
+      if(fld.startsWith("/")) {
+        fld = fld.substring(1)
+      }
+      if(fld.endsWith("/")) {
+        fld = fld.substring(0, fld.length -1)
+      }
+      folders.push(fld)
+    }
+    return {files, folders};
 }
 
-// Function to list all folders in a given bucket and folder
-async function listFolders(bucketName, folderPath) {
+async function listOjects(bucketName, folderPath) {
   const params = {
     Bucket: bucketName,
     Delimiter: '/',
-    Prefix: folderPath, // Folder path ends with '/'
+    Prefix: folderPath ? `${folderPath}/` : folderPath, // Folder path ends with '/'
   };
 
   const folders = [];
+  const files = []
 
   let continuationToken = null;
 
@@ -64,31 +76,7 @@ async function listFolders(bucketName, folderPath) {
       folders.push(commonPrefix.Prefix);
     });
 
-    continuationToken = response.NextContinuationToken;
-  } while (continuationToken);
-
-  return folders;
-}
-
-// Function to list all files in a given bucket and folder
-async function listFiles(bucketName, folderPath) {
-  const params = {
-    Bucket: bucketName,
-    Prefix: folderPath,
-  };
-
-  const files = [];
-
-  let continuationToken = null;
-
-  do {
-    if (continuationToken) {
-      params.ContinuationToken = continuationToken;
-    }
-
-    const response = await s3.listObjectsV2(params).promise();
-
-    // Extract and add file names to the array
+    // Add file keys to the array
     response.Contents.forEach((content) => {
       files.push(content.Key);
     });
@@ -96,8 +84,9 @@ async function listFiles(bucketName, folderPath) {
     continuationToken = response.NextContinuationToken;
   } while (continuationToken);
 
-  return files;
+  return {files, folders};
 }
+
 
 router.get('/', function (_req, res, _next){
   const bucket = bucketIds[0] || fakeBucket;
@@ -119,8 +108,7 @@ router.get('/:bucket', async function(req, res, next) {
   // query for images
   console.log('querying S3 for objects in ' + bucket);
   try {
-    const folders = await listFolders(bucket, folder);
-    const files = buildFileListFromS3Data(bucket, folder, await listFiles(bucket, folder));
+    const {files, folders} = buildFileListFromS3Data(bucket, folder, await listOjects(bucket, folder));
     console.log({files, folders})
     filteredImagesArray = filterImages(files);
     res.render('index', { title: 'AWS S3 Image Viewer', showBucket: bucket, images: JSON.stringify(filteredImagesArray), buckets: JSON.stringify(bucketIds), folder, folders: JSON.stringify(folders)});
