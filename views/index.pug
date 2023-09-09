@@ -82,16 +82,15 @@ block content
           p #[strong No Images Found]
     else
       .row.row-cards-pf
-      each imageUrl in imagesArray ? imagesArray: []
+      each file in imagesArray ? imagesArray: []
         //.col-xs-12.col-sm-6.col-md-4.col-lg-3
         .col-xs-12.col-sm-4.col-md-3.col-lg-2
           .card-pf.card-pf-view
             .card-pf-body
               .card-pf-top-element
-                  img(src=imageUrl, alt='Image could not be rendered', style='max-height: 100%; width: 100%; object-fit: contain', data-toggle="tooltip" data-placement="top" title=imageUrl.split("/").pop())
-              //.card-pf-title.text-center #{imageUrl}
+                  img(src=file.url, alt='Image could not be rendered', style='max-height: 100%; width: 100%; object-fit: contain', data-toggle="tooltip" data-placement="top" title=file.url.split("/").pop())
               .card-pf-items.text-center
-                a(href=imageUrl)
+                a(href=file.originalUrl)
                   span.fa.fa-arrow-circle-o-down.fa-2x
     
 

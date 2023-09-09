@@ -48,7 +48,7 @@ async function upsertThumbnail(bucketname, key, tag, url) {
 // validate the images and filter them according to prefs
 //----------------------------------------------------------------------------
 function filterImages(data) {
-    return data.filter(img => IMAGE_EXTENSIONS.has(img.split('.').pop()));
+    return data.filter(({originalUrl}) => IMAGE_EXTENSIONS.has(originalUrl.split('.').pop()));
 }
 
 //----------------------------------------------------------------------------
@@ -58,20 +58,20 @@ async function buildFileListFromS3Data(bucketname, folder, raw) {
     const S3_PREFIX = `https://${bucketname}.s3.${awsregion}.amazonaws.com/`;
     const files = [];
     for (const { Size, Key, ETag } of raw.files) {
-        const url = `${S3_PREFIX}${Key}`;
+        const originalUrl = `${S3_PREFIX}${Key}`;
+        let url = originalUrl;
+        let prefixWithinFolder = Key
+        if(folder) {
+           prefixWithinFolder = Key.substring(folder.length + 1);
+        }
+        if(!prefixWithinFolder) {
+          continue;
+        }
         if(MAX_IMAGE_SIZE && Size > MAX_IMAGE_SIZE) {
           console.log(`Creating thumbnail for ${Key} - ${Size}`);
-          files.push(await upsertThumbnail(bucketname, Key, ETag, url))
-        } else  {
-          let prefixWithinFolder = Key
-          if(folder) {
-             prefixWithinFolder = Key.substring(folder.length + 1);
-          }
-          if(prefixWithinFolder) {
-            files.push(url);
-          }
-        }
-
+          url = await upsertThumbnail(bucketname, Key, ETag, originalUrl)
+        } 
+        files.push({url, originalUrl});
     }
     const folders = [];
     for (const prefix of raw.folders) {
