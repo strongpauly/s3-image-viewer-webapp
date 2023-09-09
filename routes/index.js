@@ -1,47 +1,16 @@
 const express = require('express');
 const sharp = require('sharp');
-const AWS = require('aws-sdk');
 const router = express.Router();
-const { existsSync } = require('fs');
-const { mkdir } = require('fs/promises')
-const {join} = require('path')
-
-
-require('dotenv').config()
-const awskey = process.env.AWS_ACCESS_KEY_ID || '';
-const awssecretkey = process.env.AWS_SECRET_ACCESS_KEY || '';
-const awsregion = process.env.AWS_REGION || 'us-east-1';
+const {environment} = require('../lib/environment')
+const {s3, awsregion} = require('../lib/s3')
 
 const bucketIds = JSON.parse(process.env.BUCKETS || '[]');
-if(awskey && awssecretkey && awsregion) {
-  AWS.config.update({accessKeyId: awskey, secretAccessKey: awssecretkey, region: awsregion});
-}
-const s3 = new AWS.S3();
-
 const IMAGE_EXTENSIONS = new Set(JSON.parse(process.env.IMAGE_EXTENSIONS || '["apng","avif","gif","jpg","jpeg","jfif","pjpeg","pjp","png","svg","webp"]'));
-const MAX_IMAGE_SIZE = parseInt(process.env.MAX_IMAGE_SIZE || '0')
 
-async function upsertThumbnail(bucketname, key, tag, url) {
-    try {
-      const fileName = `${key.split("/").pop()}.webp`
-      const path = `thumbnails/${bucketname}/${(key)}/${tag.replace(/"/g,'')}/${fileName}`
-      const directory = join(__dirname, `../public/${path}`)
-      const thumbnailFile = `${directory}/${fileName}`;
-      const thumbnailUrl = `/${path}/${fileName}`
-      if (existsSync(thumbnailFile)) {
-        return thumbnailUrl;
-      }
-      await mkdir(directory, {recursive: true})
-      const object = await s3.getObject({
-        Bucket: bucketname,
-        Key: key
-      }).promise()
-      await sharp(object.Body).resize({height: 600}).toFile(thumbnailFile);
-      return thumbnailUrl;
-    } catch (ex) {
-      console.error(ex)
-      return url
-    }
+function getThumbnailUrl(bucketname, key, tag) {
+    const parts = key.split("/");
+    const fileName = `${parts.pop()}.webp`;
+    return `thumbnails/${bucketname}/${parts.join("/")}/${tag.replace(/"/g,'')}/${fileName}`
 }
 
 //----------------------------------------------------------------------------
@@ -67,9 +36,9 @@ async function buildFileListFromS3Data(bucketname, folder, raw) {
         if(!prefixWithinFolder) {
           continue;
         }
-        if(MAX_IMAGE_SIZE && Size > MAX_IMAGE_SIZE) {
+        if(environment.maxImageSize && Size > environment.maxImageSize) {
           console.log(`Creating thumbnail for ${Key} - ${Size}`);
-          url = await upsertThumbnail(bucketname, Key, ETag, originalUrl)
+          url = getThumbnailUrl(bucketname, Key, ETag, originalUrl)
         } 
         files.push({url, originalUrl});
     }
