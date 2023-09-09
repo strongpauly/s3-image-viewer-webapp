@@ -53,7 +53,7 @@ async function buildFileListFromS3Data(bucketname, folder, raw) {
       }
       folders.push(fld)
     }
-    return {files, folders};
+    return {files, folders: folders.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))};
 }
 
 async function listOjects(bucketName, folderPath) {

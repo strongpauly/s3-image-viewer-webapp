@@ -90,8 +90,11 @@ block content
               .card-pf-top-element
                   img(loading="lazy" src=file.url, alt='Image could not be rendered', style='max-height: 100%; width: 100%; object-fit: contain', data-toggle="tooltip" data-placement="top" title=file.url.split("/").pop())
               .card-pf-items.text-center
-                a(href=file.originalUrl)
-                  span.fa.fa-arrow-circle-o-down.fa-2x
+                div.d-flex
+                  a(href=file.originalUrl)
+                    span.fa.fa-arrow-circle-o-down.fa-2x
+                  a(onclick=`javascript:navigator.clipboard.writeText('${file.originalUrl}')`)
+                    span.fa.fa-link.fa-2x
     
 
   div(class='modal' id='adds3bucket' tabindex='-1' role='dialog')
