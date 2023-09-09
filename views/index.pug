@@ -88,7 +88,7 @@ block content
           .card-pf.card-pf-view
             .card-pf-body
               .card-pf-top-element
-                  img(src=file.url, alt='Image could not be rendered', style='max-height: 100%; width: 100%; object-fit: contain', data-toggle="tooltip" data-placement="top" title=file.url.split("/").pop())
+                  img(loading="lazy" src=file.url, alt='Image could not be rendered', style='max-height: 100%; width: 100%; object-fit: contain', data-toggle="tooltip" data-placement="top" title=file.url.split("/").pop())
               .card-pf-items.text-center
                 a(href=file.originalUrl)
                   span.fa.fa-arrow-circle-o-down.fa-2x
