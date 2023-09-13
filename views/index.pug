@@ -63,7 +63,7 @@ block content
         - let subfld = 0
           while subfld < parts.length -1
             span &nbsp;/&nbsp;
-            a(href=`/${showBucket}?folder=${parts.slice(0, subfld + 1).join('/')}`) #{parts.slice(0, subfld + 1).pop()}
+            a(href=`/${showBucket}?folder=${encodeURIComponent(parts.slice(0, subfld + 1).join('/'))}`) #{parts.slice(0, subfld + 1).pop()}
             - subfld++
         if parts[0] && parts[0].length
           span &nbsp;/ #{parts.concat().pop()}
@@ -72,7 +72,8 @@ block content
     each fld in foldersArray ? foldersArray: []
       .row
         .col-xs-12.col-sm-4.col-md-3.col-lg-2
-          a(href=`/${showBucket}?folder=${folder ? folder + '/' :''}${fld}`) #{fld}
+          a(href=`/${showBucket}?folder=${encodeURIComponent(`${folder ? folder+ '/' :''}${fld}`)}`) #{fld}
+            
 
     - const imagesArray = JSON.parse(images);
     if imagesArray.length + foldersArray.length === 0
