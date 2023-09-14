@@ -9,7 +9,7 @@ const { s3 } = require('../lib/s3')
 async function upsertThumbnail(path) {
     try {
       const parts = path.split('/');
-      const fileName = decodeURIComponent(parts.pop());
+      const fileName = parts.pop();
       const directory = join(__dirname, `../thumbnails/${parts.join("/")}`)
       const thumbnailFile = `${directory}/${fileName}`
       if (existsSync(thumbnailFile)) {
@@ -34,7 +34,7 @@ async function upsertThumbnail(path) {
 
 
 router.get('/*', async function(req, res, next) {
-  res.send(await upsertThumbnail(req.path.substring(1)))
+  res.send(await upsertThumbnail(decodeURI(req.path.substring(1))))
     
 });
 
