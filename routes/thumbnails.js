@@ -17,7 +17,8 @@ async function upsertThumbnail(path) {
       }
       const bucketname = parts.shift();
       parts.pop(); // Remove tag
-      const key = `${parts.join("/")}/${fileName.substring(0, fileName.length - 5)}`
+      const key = `${parts.join("/")}${parts.length > 0 ? '/':''}${decodeURIComponent(fileName.substring(0, fileName.length - 5))}`
+      console.log(`Downloading ${key} from ${bucketname}`)
       await mkdir(directory, {recursive: true})
       const object = await s3.getObject({
         Bucket: bucketname,
@@ -27,6 +28,7 @@ async function upsertThumbnail(path) {
       await resized.toFile(thumbnailFile);
       return await resized.toBuffer();
     } catch (ex) {
+      console.error(`Upserting thumbnail '${path}'`)
       console.error(ex)
       return ''
     }
