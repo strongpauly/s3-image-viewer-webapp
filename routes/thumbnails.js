@@ -5,6 +5,7 @@ const { existsSync } = require('fs');
 const { mkdir, readFile } = require('fs/promises')
 const { join } = require('path')
 const { s3 } = require('../lib/s3')
+const { GetObjectCommand } = require('@aws-sdk/client-s3')
 
 async function upsertThumbnail(path) {
     try {
@@ -20,11 +21,12 @@ async function upsertThumbnail(path) {
       const key = `${parts.join("/")}${parts.length > 0 ? '/':''}${decodeURIComponent(fileName.substring(0, fileName.length - 5))}`
       console.log(`Downloading ${key} from ${bucketname}`)
       await mkdir(directory, {recursive: true})
-      const object = await s3.getObject({
+      const object = await s3.send(new GetObjectCommand({
         Bucket: bucketname,
         Key: key
-      }).promise()
-      const resized = sharp(object.Body).resize({height: 600})
+      }))
+      const body = await object.Body.transformToByteArray()
+      const resized = sharp(body).resize({height: 600})
       await resized.toFile(thumbnailFile);
       return await resized.toBuffer();
     } catch (ex) {

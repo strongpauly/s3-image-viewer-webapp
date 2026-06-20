@@ -3,6 +3,7 @@ const sharp = require('sharp');
 const router = express.Router();
 const {environment} = require('../lib/environment')
 const {s3, awsregion} = require('../lib/s3')
+const {ListObjectsV2Command} = require('@aws-sdk/client-s3')
 
 const bucketIds = JSON.parse(process.env.BUCKETS || '[]');
 const IMAGE_EXTENSIONS = new Set(JSON.parse(process.env.IMAGE_EXTENSIONS || '["apng","avif","gif","jpg","jpeg","jfif","pjpeg","pjp","png","svg","webp"]'));
@@ -73,15 +74,15 @@ async function listOjects(bucketName, folderPath) {
       params.ContinuationToken = continuationToken;
     }
 
-    const response = await s3.listObjectsV2(params).promise();
+    const response = await s3.send(new ListObjectsV2Command(params));
 
     // Extract and add folder names to the array
-    response.CommonPrefixes.forEach((commonPrefix) => {
+    (response.CommonPrefixes || []).forEach((commonPrefix) => {
       folders.push(commonPrefix.Prefix);
     });
 
     // Add file keys to the array
-    response.Contents.forEach((content) => {
+    (response.Contents || []).forEach((content) => {
       files.push(content);
     });
 
