@@ -89,7 +89,7 @@ block content
           .card-pf.card-pf-view
             .card-pf-body
               .card-pf-top-element
-                  img(loading="lazy" src=file.url, alt='Image could not be rendered', style='max-height: 100%; width: 100%; object-fit: contain', data-toggle="tooltip" data-placement="top" title=file.url.split("/").pop())
+                  img(loading="lazy" src=file.url, alt='Image could not be rendered', class='lightbox-trigger', style='max-height: 100%; width: 100%; object-fit: contain; cursor: pointer', data-full=file.originalUrl, data-toggle="tooltip" data-placement="top" title=file.url.split("/").pop())
               .card-pf-items.text-center
                 div.d-flex
                   a(href=file.originalUrl)
@@ -97,6 +97,10 @@ block content
                   a(onclick=`javascript:navigator.clipboard.writeText('${file.originalUrl}')`)
                     span.fa.fa-link.fa-2x
     
+
+  #lightbox.lightbox-overlay(role='dialog' aria-hidden='true')
+    span.lightbox-close(aria-label='Close') &times;
+    img.lightbox-image(alt='Full size image')
 
   div(class='modal' id='adds3bucket' tabindex='-1' role='dialog')
     .modal-dialog.modal-lg.wizard-pf
@@ -129,6 +133,41 @@ block content
       $(".row-cards-pf > [class*='col'] > .card-pf").matchHeight();
       // initialize tooltips
       $('[data-toggle="tooltip"]').tooltip();
+
+      // Lightbox: show a larger version of an image when clicked
+      var $lightbox = $('#lightbox');
+      var $lightboxImage = $lightbox.find('.lightbox-image');
+      function openLightbox(src, title) {
+        $lightboxImage.attr('src', src).attr('alt', title || 'Full size image');
+        $lightbox.addClass('is-open').attr('aria-hidden', 'false');
+        $('body').addClass('lightbox-open');
+      }
+      function closeLightbox() {
+        $lightbox.removeClass('is-open is-actual-size').attr('aria-hidden', 'true');
+        $lightboxImage.attr('src', '');
+        $('body').removeClass('lightbox-open');
+      }
+      $(document).on('click', '.lightbox-trigger', function() {
+        var $img = $(this);
+        $lightbox.removeClass('is-actual-size');
+        openLightbox($img.data('full') || $img.attr('src'), $img.attr('title'));
+      });
+      // Toggle between fit-to-screen and actual size (with scrolling) on image click
+      $lightboxImage.on('click', function() {
+        $lightbox.toggleClass('is-actual-size');
+        $lightbox.scrollTop(0).scrollLeft(0);
+      });
+      // Close on overlay click or the close button (but not when clicking the image itself)
+      $lightbox.on('click', function(e) {
+        if (e.target === this || $(e.target).hasClass('lightbox-close')) {
+          closeLightbox();
+        }
+      });
+      $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && $lightbox.hasClass('is-open')) {
+          closeLightbox();
+        }
+      });
 
       //$().setupVerticalNavigation(true);
 
